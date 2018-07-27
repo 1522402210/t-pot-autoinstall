@@ -9,6 +9,13 @@
 # v17.10.0 by mo, DTAG, 2016-10-19                       #
 ##########################################################
 
+# 中国加速
+# 1、修改Ubuntu源为中国镜像
+# 2、修改pip安装源为tsinghua
+# 3、修改npm安装源为taobao
+# 4、修改git源为coding
+# 5、docker增加aliyun mirror
+
 
 # Let's create a function for colorful output
 fuECHO () {
@@ -241,6 +248,27 @@ esac
 
 # End checks
 
+# replace apt sources with China 
+fuECHO "### Replace 163.com sources."
+cp /etc/apt/sources.list /etc/apt/sources.list.bak
+apt-get clean
+cat > /etc/apt/sources.list << EOF
+deb http://mirrors.163.com/ubuntu/ xenial main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ xenial-security main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ xenial-updates main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ xenial-backports main restricted universe multiverse
+deb http://mirrors.163.com/ubuntu/ xenial-proposed main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ xenial main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ xenial-security main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ xenial-updates main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ xenial-backports main restricted universe multiverse
+deb-src http://mirrors.163.com/ubuntu/ xenial-proposed main restricted universe multiverse
+EOF
+rm -fR /var/lib/apt/lists/* 
+mkdir /var/lib/apt/lists/partial  
+apt-get update  --fix-missing
+
+
 # Let's pull some updates
 fuECHO "### Pulling Updates."
 apt-get update -y
@@ -257,9 +285,9 @@ apt-get autoremove -y
 
 # Let's remove NGINX default website
 fuECHO "### Removing NGINX default website."
-[ -e /etc/nginx/sites-enabled ] && rm /etc/nginx/sites-enabled/default  
-[ -e /etc/nginx/sites-avaliable ] && rm /etc/nginx/sites-available/default  
-[ -e /usr/share/nginx/html/index.html ] && rm /usr/share/nginx/html/index.html  
+[ -e /etc/nginx/sites-enabled ] && rm -f /etc/nginx/sites-enabled/default  
+[ -e /etc/nginx/sites-avaliable ] && rm -f /etc/nginx/sites-available/default  
+[ -e /usr/share/nginx/html/index.html ] && rm -f /usr/share/nginx/html/index.html  
 
 if [ -z ${noninteractive+x} ]; then
 	# Let's ask user for a password for the web user
@@ -307,13 +335,13 @@ mkdir -p /etc/nginx/ssl
 openssl req -nodes -x509 -sha512 -newkey rsa:8192 -keyout "/etc/nginx/ssl/nginx.key" -out "/etc/nginx/ssl/nginx.crt" -days 3650  -subj '/C=AU/ST=Some-State/O=Internet Widgits Pty Ltd'
 
 # Installing docker-compose, wetty, ctop, elasticdump, tpot
-pip install --upgrade pip && hash -r pip
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade pip && hash -r pip
 # upgrading setuptools
-pip install --upgrade setuptools
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade setuptools
 fuECHO "### Installing docker-compose."
 pip install docker-compose==1.16.1 
 fuECHO "### Installing elasticsearch curator."
-pip install elasticsearch-curator==5.2.0
+pip install elasticsearch-curator==5.2.0 
 fuECHO "### Installing wetty."
 [ ! -e /usr/bin/node ] && ln -s /usr/bin/nodejs /usr/bin/node 
 npm install https://github.com/t3chn0m4g3/wetty -g 
@@ -321,10 +349,10 @@ fuECHO "### Installing elasticsearch-dump."
 npm install https://github.com/t3chn0m4g3/elasticsearch-dump -g 
 fuECHO "### Installing ctop."
 wget https://github.com/bcicen/ctop/releases/download/v0.6.1/ctop-0.6.1-linux-amd64 -O ctop 
-mv ctop /usr/bin/
+cp -f ctop /usr/bin/
 chmod +x /usr/bin/ctop
 fuECHO "### Cloning T-Pot."
-git clone https://github.com/dtag-dev-sec/tpotce /opt/tpot
+git clone https://git.coding.net/Panjks-/tpotce.git /opt/tpot
 
 # Let's add a new user
 fuECHO "### Adding new user."
@@ -375,6 +403,20 @@ case $mode in
     cp /opt/tpot/etc/compose/all.yml $myTPOTCOMPOSE
   ;;
 esac
+
+
+# docker aliyun mirror
+fuECHO "### Patching docker using aliyun mirrors."
+tee -a /etc/docker/daemon.json <<EOF
+{
+  "registry-mirrors": ["https://hkil81sa.mirror.aliyuncs.com"]
+}
+EOF
+
+# Let's restart docker for proxy changes to take effect
+systemctl daemon-reload
+systemctl restart docker
+sleep 5
 
 
 # Let's load docker images
