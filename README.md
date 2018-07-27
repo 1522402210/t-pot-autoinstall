@@ -1,30 +1,82 @@
-# Autoinstall T-Pot on Ubuntu 16.04.x 
-This script will install [T-Pot 17.10](http://dtag-dev-sec.github.io/mediator/feature/2017/11/07/t-pot-17.10.html) on a fresh Ubuntu 16.04.x LTS (64bit). 
+# 自动安装 T-Pot  中国区加速 
+感谢 [T-Pot 17.10](http://dtag-dev-sec.github.io/mediator/feature/2017/11/07/t-pot-17.10.html) ，感谢[n3uz](https://github.com/n3uz/t-pot-autoinstall)。
 
-It is intended to be used on hosted servers, where an Ubuntu base image is given and there is no ability to install custom ISO images. 
-Successfully tested on vanilla Ubuntu 16.04.3 in VMware.
+修改如下：
 
-Choose Ubuntu 16.04.x 64bit as operating system. Make sure you have your SSH key added to your account (~/.ssh/authorized_keys) 
-and meet the [system requirements](http://dtag-dev-sec.github.io/mediator/feature/2017/11/07/t-pot-17.10.html#requirements) (>=4GB RAM, 64GB disk, network exposure) for a full T-Pot instance. The system requirements depend on the flavour of T-Pot you intend to run. 
+```
+1、修改Ubuntu源为163源。
+2、修改pip安装源为清华源。
+3、修改git源为coding。
+4、docker增加aliyun mirror
+```
 
-During setup, you can choose from four different configurations: T-Pot's standard installation, industrial edition, full installation and, in case you have limited ressources, you can opt for a "honeypot only"-mode during install, which will install T-Pot without suricata and ELK dashboard (>=3GB RAM required). 
+脚本在ubuntu16.04 下测试通过。
 
-So, clone the repository. Run as root. Enjoy.
+## 部署前置条件
 
-    git clone https://github.com/dtag-dev-sec/t-pot-autoinstall.git
-    cd t-pot-autoinstall/
-    sudo su
-    ./install.sh
-    
-If you run into problems during installation it might be related to your hoster's custom Ubuntu update repositories. So far, we do not have a solution for this. 
+- 准备普通用户，并为普通用户创建公私钥，用于密钥登录。
+- root运行安装脚本
 
-Due to public demand, we added a non-interactive installation option. Just add the *username*, the *number referencing the edition* and the *password for web access* to the installation script, e.g.
+以普通用户z为例
 
-	./install.sh ubuntu 2 myPassw0rd
-		
-will install the **Honeypot Only Edition** (2) for the user "ubuntu" and set the web access password to "myPassw0rd". 
+```
+z@ubuntu:~$ ssh-keygen -t rsa
+Generating public/private rsa key pair.
+Enter file in which to save the key (/home/z/.ssh/id_rsa):
+Created directory '/home/z/.ssh'.
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+Your identification has been saved in /home/z/.ssh/id_rsa.
+Your public key has been saved in /home/z/.ssh/id_rsa.pub.
+The key fingerprint is:
+SHA256:ZEVXpFGTbX+e/RoGkF/XxN9McBKt7MUvaZxAZ7XL/Tw z@ubuntu
+The key's randomart image is:
++---[RSA 2048]----+
+|         .o o+OO+|
+|         . o.o+=O|
+|        o o..+.B*|
+|       o   o..+.@|
+|        S   o+ B*|
+|             .Bo=|
+|             .oE+|
+|             . .o|
+|              .. |
++----[SHA256]-----+
+
+z@ubuntu:~$ ls -la ./.ssh
+total 16
+drwx------ 2 z z 4096 Oct 26 14:56 .
+drwxr-xr-x 4 z z 4096 Oct 26 14:56 ..
+-rw------- 1 z z 1766 Oct 26 14:56 id_rsa
+-rw-r--r-- 1 z z  390 Oct 26 14:56 id_rsa.pub
+
+```
+
+添加公钥
+
+```
+z@ubuntu:~$ cat /home/z/.ssh/id_rsa.pub >> /home/z/.ssh/authorized_keys
+```
+
+保存私钥/home/z/.ssh/id_rsa 文件，用于后面的登录。
 
 
-	
 
-	
+## 安装建议
+
+* 执行install.sh之前先执行如下命令，执行完毕之后再运行install.sh
+
+  ```
+  apt-get install python2.7
+  pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade pip && hash -r pip
+  pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --upgrade setuptools
+  pip install docker-compose==1.16.1 
+  pip install elasticsearch-curator==5.2.0 
+  
+  apt-get install nodejs npm
+  npm install https://github.com/t3chn0m4g3/wetty -g
+  npm install https://github.com/t3chn0m4g3/elasticsearch-dump -gs
+  ```
+
+  
+
