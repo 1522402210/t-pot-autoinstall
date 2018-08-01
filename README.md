@@ -75,7 +75,7 @@ z@ubuntu:~$ cat /home/z/.ssh/id_rsa.pub >> /home/z/.ssh/authorized_keys
   
   apt-get install nodejs npm
   npm install https://github.com/t3chn0m4g3/wetty -g
-  npm install https://github.com/t3chn0m4g3/elasticsearch-dump -gs
+  npm install https://github.com/t3chn0m4g3/elasticsearch-dump -g
   ```
 
   
